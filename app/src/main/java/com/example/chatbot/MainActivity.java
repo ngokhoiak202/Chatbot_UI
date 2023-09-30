@@ -86,9 +86,6 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(@NonNull Call<ArrayList<BotResponse>> call, @NonNull Response<ArrayList<BotResponse>> response) {
-                messageList.add(new Message("Đang trả lời... ",Message.SENT_BY_BOT));
-
-//                if (response.body() != null && response.body().size() > 0) {
                 if (response.code() == 200 && response.body() != null) {
                     BotResponse question = response.body().get(0);
                     messageList.add(new Message(question.getText() ,Message.SENT_BY_BOT ));
