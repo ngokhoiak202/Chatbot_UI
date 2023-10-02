@@ -2,17 +2,26 @@ package com.example.chatbot;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
+import android.speech.SpeechRecognizer;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 
 import okhttp3.OkHttpClient;
@@ -23,14 +32,12 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
-
-//    public static final MediaType JSON
-//            = MediaType.get("application/json; charset=utf-8");
-//    OkHttpClient client = new OkHttpClient();
+    private static final int SPEECH_REQUEST_CODE = 100;
+    SpeechRecognizer speechRecognizer;
     RecyclerView recyclerView;
     TextView welcomeTextView;
     EditText messageEditText;
-    ImageButton sendButton;
+    ImageButton sendButton,speakButton;
 
     List<Message> messageList;
 
@@ -46,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         //setup recycler view
         messageAdapter = new MessageAdapter (messageList);
         recyclerView.setAdapter (messageAdapter);
+        // quản lý việc sắp xếp các mục trong RecyclerView.
         LinearLayoutManager llm = new LinearLayoutManager( this);
         llm.setStackFromEnd(true);
         recyclerView.setLayoutManager (llm);
@@ -57,6 +65,41 @@ public class MainActivity extends AppCompatActivity {
             messageEditText.setText("");
             welcomeTextView.setVisibility(View.GONE);
         });
+
+        speakButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+                intent.putExtra(RecognizerIntent.EXTRA_PROMPT,  "Need To Speak");
+                try {
+                    startActivityForResult(intent, SPEECH_REQUEST_CODE);
+                }
+                catch (ActivityNotFoundException a){
+                    Toast.makeText(  MainActivity.this,  "Sorry, Your Device not Supported", Toast.LENGTH_SHORT).show();
+
+                }
+            }
+        });
+    }
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case SPEECH_REQUEST_CODE: {
+                if (resultCode == RESULT_OK && null != data) {
+                    ArrayList result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+
+                    result.get(0);
+                    String question = result.toString().trim();
+                    addToChat(question, Message. SENT_BY_ME);
+                    messageEditText.setText("");
+                    welcomeTextView.setVisibility(View.GONE);
+                }
+                break;
+            }
+        }
     }
 
     void addToChat(String message, String sentBy) {
@@ -104,12 +147,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
     private void anhxa() {
         recyclerView = findViewById(R.id.recycler_view);
         welcomeTextView = findViewById(R.id.welcome_text);
         messageEditText = findViewById(R.id.message_edit_text);
         sendButton = findViewById(R.id.send_btn);
+        speakButton = findViewById(R.id.speak_btn);
 
     }
 }
